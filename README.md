@@ -1,5 +1,5 @@
 # voice-channels-aws-transcribe-php
-Transcribe a voice conversation separate channels and store in a RDS MySQL database. This is done using PHP and Amazon Transcribe with an AWS Lambda function and AWS S3.
+Transcribe a voice conversation separate channels using Amazon Transcribe. This is done using PHP and Amazon Transcribe with an AWS Lambda function and AWS S3.
 
 ## Prerequisites
 
@@ -28,9 +28,7 @@ composer install
 
 You will need to create [AWS credentials](https://www.serverless.com/framework/docs/providers/aws/guide/credentials/) as indicated by `Serverless`.
 
-Also, create a new [RDS Instance](https://aws.amazon.com/rds/) using the default settings. Make note of the ARN for later use. Use the `/data/schema.sql` contents to set up the database and table.
-
-Lastly, create a new [AWS S3 bucket](https://aws.amazon.com/rds/) and make note of the URL for later use.
+Also, create a new [AWS S3 bucket](https://aws.amazon.com/s3/) and make note of the URL for later use.
 
 ### Linking the app to Vonage
 
@@ -40,7 +38,7 @@ Create a new Vonage Voice application for this app, and associated it with a Von
 
 Install the CLI by following [these instructions](https://github.com/Nexmo/nexmo-cli#installation). Then create a new Vonage Voice application that also sets up an `answer_url` and `event_url` for the app running in AWS Lambda.
 
-Ensure to append `/webhooks/answer` or `/webhooks/event` to the end of the URL to coincide with the routes in `index.php`.
+Ensure to append `/webhooks/answer` or `/webhooks/event` to the end of the URL provided later by AWS Lambda, to coincide with the routes in `index.php`.
 
 ```
 nexmo app:create aws-transcribe https://<your_hostname>/webhooks/answer https://<your_hostname>/webhooks/event
@@ -69,21 +67,18 @@ nexmo link:app YOUR_NUMBER YOUR_APPLICATION_ID
 Rename the provided `.env.dist` file to `.env` and update the values as needed from `AWS` and `Vonage`.
 
 ```env
-AWS_VERSION=latest
-AWS_S3_ARN=
-AWS_S3_BUCKET_NAME=
-AWS_S3_RECORDING_FOLDER_NAME=
-AWS_RDS_URL=
-AWS_RDS_DATABASE_NAME=
-AWS_RDS_TABLE_NAME=
-AWS_RDS_USER=
-AWS_RDS_PASSWORD=
-NEXMO_APPLICATION_PRIVATE_KEY_PATH='./private.key'
-NEXMO_APPLICATION_ID=
-APP_ID=
+APP_ID=voice-aws-transcribe-php
 LANG_CODE=en-US
 SAMPLE_RATE=8000
+AWS_VERSION=latest
+AWS_S3_ARN=<aws_s3_arn>
+AWS_S3_BUCKET_NAME='<bucket_name>'
+AWS_S3_RECORDING_FOLDER_NAME='<aws_s3_bucket_folder_name>'
+NEXMO_APPLICATION_PRIVATE_KEY_PATH='./private.key'
+NEXMO_APPLICATION_ID=<nexmo_application_id>
 ```
+
+> NOTE: All placeholders `<>` need to be updated.
 
 ### Serverless Plugin
 
@@ -101,9 +96,17 @@ With all the above updated successfully, you can now use `Serverless` to deploy 
 serverless deploy
 ```
 
-### Create Cloudwatch Trigger
+> Note: Return to Nexmo and update the `answer` and `event` URLs with what is provided by the deployment.
 
-Go to AWS Cloudwatch and add a trigger to call the `/process` route upon completion of the transcription. This will add the transcriptions to the database.
+### Usage
+
+With the deployment completed, you should be able to place a call to the `Nexmo number` from any phone. You will hear a message about being connected, and the `recipient` number will be called.
+
+After you hang up, the `MP3 file` will be retrieved from `Nexmo` and uploaded to `AWS S3`. Following that, a transcription job will be started. The job can be monitored in the AWS Console website after login.
+
+## Next Steps
+
+As a follow-up, you may want to automate adding the results to a database. See this [nexmo-community/aws-voice-transcription-rds-callback-php](https://github.com/nexmo-community/aws-voice-transcription-rds-callback-php) for more info on how to accomplish that.
 
 ## Contributing
 
