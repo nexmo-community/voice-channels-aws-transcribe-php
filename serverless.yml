@@ -1,0 +1,37 @@
+service: voicetos3totranstords
+
+provider:
+    name: aws
+    region: us-east-1
+    runtime: provided
+    iamRoleStatements:
+        - Effect: Allow
+          Action:
+              - s3:PutObject
+              - s3:GetObject
+              - s3:DeleteObject
+          Resource: ${env:AWS_S3_ARN}
+        - Effect: Allow
+          Action: transcribe:*
+          Resource: '*'
+
+plugins:
+    - ./vendor/bref/bref
+    - serverless-dotenv-plugin
+
+functions:
+    voicetos3totranstords:
+        handler: index.php
+        description: 'PHP Function built on Slim PHP to Transcribe Voice communications by channel and store them in S3. Then, parse the files to be added to RDS.'
+        timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
+        layers:
+            - ${bref:layer.php-73-fpm}
+        events:
+            -   http: 'ANY /'
+            -   http: 'ANY /{proxy+}'
+
+# Exclude files from deployment
+package:
+    exclude:
+        - 'node_modules/**'
+        - 'tests/**'
